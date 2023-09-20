@@ -9,7 +9,8 @@
     "start": "npm run compile && set NODE_OPTIONS=--experimental-specifier-resolution=node --trace-warnings && ts-node-esm ./dist/server.js",
     "typeorm": "typeorm-ts-node-esm",
     "migration:run": "ts-node-esm ./node_modules/typeorm/cli.js migration:run -d ./src/config/database.connection.ts",
-    "migration:generate": "npm run typeorm migration:generate -- -d src/config/database.connection.ts"
+    "migration:generate": "npm run typeorm migration:generate -- -d src/config/database.connection.ts",
+    "migration:create": "npm run typeorm migration:create ./src/migrations/FirstMigrationCreated"
   },
   "keywords": [],
   "author": "",

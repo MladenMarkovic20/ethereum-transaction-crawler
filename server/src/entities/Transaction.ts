@@ -1,6 +1,6 @@
 import { Entity, PrimaryColumn, Column } from "typeorm";
 
-@Entity()
+@Entity({ name: "transaction" })
 export class Transaction {
   @PrimaryColumn({ default: "" })
   hash: string;

@@ -1,4 +1,3 @@
-// backend/src/controllers/TransactionController.ts
 import { Request, Response } from "express";
 import { TransactionService } from "../service/TransactionService";
 
@@ -12,6 +11,10 @@ export const getTransactionsResults = async (req: Request, res: Response) => {
   }
 };
 
-export const updateDatabaseWithNewData = async () => {
+export const updateDatabaseWithNewData = async (
+  req: Request,
+  res: Response
+) => {
   await TransactionService.updateDatabaseWithNewData();
+  return res.status(201).json({ message: "Database successfully updated" });
 };

@@ -1,7 +1,9 @@
 import { formatEther } from "ethers";
 import { Transaction } from "../entities/Transaction";
+import { AppDataSource } from "../config/database.connection";
 import { getNewDataFromAPI } from "../helpers/getNewDataFromAPI";
 import { getTransactionRepository } from "../repository/TransactionRepository";
+import { EntityManager } from "typeorm";
 
 export class TransactionService {
   static async getAllTransactionByAddress(): Promise<
@@ -28,7 +30,7 @@ export class TransactionService {
   static async findOneByHash(hash: string): Promise<Transaction | null> {
     const transactionRepository = await getTransactionRepository();
 
-    const transactionByHash = transactionRepository.findOne({
+    const transactionByHash = await transactionRepository.findOne({
       where: { hash },
     });
 
@@ -36,49 +38,44 @@ export class TransactionService {
   }
 
   static async updateDatabaseWithNewData(): Promise<void> {
-    const transactionRepository = await getTransactionRepository();
-    const newTransactionsFromAPI = await getNewDataFromAPI();
+    try {
+      await AppDataSource.manager.transaction(
+        async (transactionalEntityManager: EntityManager) => {
+          const newTransactionsFromAPI = await getNewDataFromAPI();
 
-    for (const transaction of newTransactionsFromAPI) {
-      const timestamp = new Date(Number(transaction.timeStamp) * 1000);
-      const formattedTimestamp = timestamp
-        .toISOString()
-        .replace(/T/, " ")
-        .replace(/\..+/, "");
+          for (const transaction of newTransactionsFromAPI) {
+            const timestamp = new Date(Number(transaction.timeStamp) * 1000);
+            const formattedTimestamp = timestamp
+              .toISOString()
+              .replace(/T/, " ")
+              .replace(/\..+/, "");
 
-      const existingTransaction = transaction ?? {};
+            const savedTransaction = await TransactionService.findOneByHash(
+              transaction.hash
+            );
 
-      const savedTransaction = TransactionService.findOneByHash(
-        transaction.hash
+            if (!savedTransaction) {
+              const newTransaction = new Transaction();
+              newTransaction.hash = transaction.hash;
+              newTransaction.method = !transaction.functionName
+                ? "Transfer"
+                : transaction.functionName;
+              newTransaction.blockNumber = transaction.blockNumber;
+              newTransaction.timeStamp = formattedTimestamp;
+              newTransaction.from = transaction.from;
+              newTransaction.to = transaction.to;
+              newTransaction.value = `${formatEther(transaction.value)} ETH`;
+              newTransaction.txnFee = formatEther(transaction.gasPrice);
+
+              transactionalEntityManager
+                .getRepository(Transaction)
+                .save(newTransaction);
+            }
+          }
+        }
       );
-
-      if (await savedTransaction) {
-        existingTransaction.method = !transaction.method
-          ? "Transfer"
-          : transaction.method;
-        existingTransaction.blockNumber = transaction.blockNumber;
-        existingTransaction.timeStamp = formattedTimestamp;
-        existingTransaction.from = transaction.from;
-        existingTransaction.to = transaction.to;
-        existingTransaction.value = `${formatEther(transaction.value)} ETH`;
-        existingTransaction.txnFee = formatEther(transaction.gasPrice);
-
-        transactionRepository.save(existingTransaction);
-      } else {
-        const newTransaction = new Transaction();
-        newTransaction.hash = transaction.hash;
-        newTransaction.method = !transaction.method
-          ? "Transfer"
-          : transaction.method;
-        newTransaction.blockNumber = transaction.blockNumber;
-        newTransaction.timeStamp = formattedTimestamp;
-        newTransaction.from = transaction.from;
-        newTransaction.to = transaction.to;
-        newTransaction.value = `${formatEther(transaction.value)} ETH`;
-        newTransaction.txnFee = formatEther(transaction.gasPrice);
-
-        transactionRepository.save(newTransaction);
-      }
+    } catch (error) {
+      console.log(error);
     }
   }
 }

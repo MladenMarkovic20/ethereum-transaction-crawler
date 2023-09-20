@@ -1,11 +1,13 @@
-import AppDataSource from "./src/config/database.connection";
+import { AppDataSource } from "./src/config/database.connection";
 import express, { Express } from "express";
 import routes from "./src/routes/routes";
 
 const initialServerSetup = async () => {
+  const connection = AppDataSource;
+
   try {
-    await AppDataSource.initialize();
-    await AppDataSource.runMigrations();
+    await connection.initialize();
+    await connection.runMigrations();
 
     const app: Express = express();
 

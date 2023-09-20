@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const AppDataSource = new DataSource({
+export const AppDataSource = new DataSource({
   type: "postgres",
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || "5433"),
@@ -21,5 +21,3 @@ const AppDataSource = new DataSource({
   migrations: [__dirname + "/../migrations/*.{js,ts}"],
   migrationsTableName: "history",
 });
-
-export default AppDataSource;
