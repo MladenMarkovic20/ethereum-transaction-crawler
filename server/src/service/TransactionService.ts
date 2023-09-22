@@ -37,11 +37,17 @@ export class TransactionService {
     return transactionByHash;
   }
 
-  static async updateDatabaseWithNewData(): Promise<void> {
+  static async updateDatabaseWithNewData(
+    walletAddress: string,
+    page: number
+  ): Promise<void> {
     try {
       await AppDataSource.manager.transaction(
         async (transactionalEntityManager: EntityManager) => {
-          const newTransactionsFromAPI = await getNewDataFromAPI();
+          const newTransactionsFromAPI = await getNewDataFromAPI(
+            walletAddress,
+            page
+          );
 
           for (const transaction of newTransactionsFromAPI) {
             const timestamp = new Date(Number(transaction.timeStamp) * 1000);
@@ -77,5 +83,10 @@ export class TransactionService {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  static async removeAllRecordFromDB(): Promise<void> {
+    const transactionRepository = await getTransactionRepository();
+    await transactionRepository.clear();
   }
 }

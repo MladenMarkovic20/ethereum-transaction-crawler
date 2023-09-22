@@ -1,9 +1,14 @@
 import { AppDataSource } from "./src/config/database.connection";
 import express, { Express } from "express";
 import routes from "./src/routes/routes";
+import cors from "cors";
 
 const initialServerSetup = async () => {
   const connection = AppDataSource;
+
+  const corsOptions = {
+    origin: "http://localhost:3000",
+  };
 
   try {
     await connection.initialize();
@@ -12,6 +17,7 @@ const initialServerSetup = async () => {
     const app: Express = express();
 
     app.use(express.json());
+    app.use(cors(corsOptions));
     app.use("/", routes);
 
     app.listen(4000, () => {
